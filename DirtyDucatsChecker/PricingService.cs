@@ -10,7 +10,13 @@ namespace DirtyDucatsChecker
 {
     public class PricingService
     {
-        private Dictionary<string, ItemPrice> itemPrices = new Dictionary<string, ItemPrice>();
+        #region Performance improvement by RandomStrangler
+
+        private Dictionary<string, ItemPrice> itemPrices = new Dictionary<string, ItemPrice>(StringComparer.OrdinalIgnoreCase);
+
+        #endregion
+
+        #region Constructor Region
 
         public PricingService()
         {
@@ -26,23 +32,35 @@ namespace DirtyDucatsChecker
                 if (price != null)
                 {
                     itemPrice.PlatinumPrice = price.PriceInfo.Median;
-                    itemPrices.Add(part.Name.ToLower(), itemPrice);
+                    itemPrices.Add(part.Name, itemPrice);
                 }
             }
         }
 
+        #endregion
+
+        #region Public Methods 
+
+        #region GetPricesByNames Method
+
         public List<ItemPrice> GetPricesByNames(IEnumerable<string> names)
         {
+            #region Method Body
             var result = new List<ItemPrice>();
             foreach (var name in names)
             {
-                if (itemPrices.TryGetValue(name.ToLower(), out ItemPrice itemPrice))
+                if (itemPrices.TryGetValue(name, out ItemPrice itemPrice))
                 {
                     result.Add(itemPrice);
                 }
             }
 
             return result;
+            #endregion
         }
+
+        #endregion
+
+        #endregion
     }
 }
