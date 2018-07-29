@@ -1,22 +1,13 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DirtyDucatsChecker
 {
     public class PricingService
     {
-        #region Performance improvement by RandomStrangler
-
-        private Dictionary<string, ItemPrice> itemPrices = new Dictionary<string, ItemPrice>(StringComparer.OrdinalIgnoreCase);
-
-        #endregion
-
-        #region Constructor Region
+        private List<ItemPrice> itemPrices = new List<ItemPrice>();
 
         public PricingService()
         {
@@ -32,35 +23,48 @@ namespace DirtyDucatsChecker
                 if (price != null)
                 {
                     itemPrice.PlatinumPrice = price.PriceInfo.Median;
-                    itemPrices.Add(part.Name, itemPrice);
+                    itemPrices.Add(itemPrice);
                 }
             }
         }
 
-        #endregion
-
-        #region Public Methods 
-
-        #region GetPricesByNames Method
-
-        public List<ItemPrice> GetPricesByNames(IEnumerable<string> names)
+        public IReadOnlyCollection<ItemPrice> GetAllPrices()
         {
-            #region Method Body
+            return itemPrices.AsReadOnly();
+        }
+
+        public List<ItemPrice> GetPricesByNames(IEnumerable<string> names, bool useFuzzySearch)
+        {
             var result = new List<ItemPrice>();
             foreach (var name in names)
             {
-                if (itemPrices.TryGetValue(name, out ItemPrice itemPrice))
+                List<ItemPrice> matches;
+                if (useFuzzySearch)
                 {
-                    result.Add(itemPrice);
+                    matches = new List<ItemPrice>();
+                    foreach (var itemPrice in itemPrices)
+                    {
+                        int levenDistance = Levenshtein.Calculate(name.ToLower(), itemPrice.Name.ToLower());
+                        if (levenDistance <= 5)
+                        {
+                            itemPrice.FuzzySearchScore = levenDistance;
+                            matches.Add(itemPrice);
+                        }
+                    }
+                }
+                else
+                {
+                    matches = itemPrices.Where(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)).ToList();
+                    matches.ForEach(x => x.FuzzySearchScore = 0);
+                }
+
+                if (matches.Any())
+                {
+                    result.AddRange(matches);
                 }
             }
 
             return result;
-            #endregion
         }
-
-        #endregion
-
-        #endregion
     }
 }
