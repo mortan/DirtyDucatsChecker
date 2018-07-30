@@ -8,6 +8,7 @@ namespace DirtyDucatsChecker
     public class PricingService
     {
         private List<ItemPrice> itemPrices = new List<ItemPrice>();
+        private readonly int levenDistanceThreshold = 5;
 
         public PricingService()
         {
@@ -66,5 +67,24 @@ namespace DirtyDucatsChecker
 
             return result;
         }
+
+        public List<ItemPrice> GetPricesByNamesFuzzy(IEnumerable<string> names)
+        {
+            var result = new List<ItemPrice>();
+            foreach (var name in names)
+            {
+                foreach (var itemPrice in itemPrices)
+                {
+                    int lastMatchValue = int.MaxValue;
+                    int levenDistance = Levenshtein.Calculate(name.ToLower(), itemPrice.Name.ToLower());
+                    if (levenDistance < levenDistanceThreshold && levenDistance < lastMatchValue)
+                    {
+
+                    }
+                }
+            }
+            
+        }
+
     }
 }
